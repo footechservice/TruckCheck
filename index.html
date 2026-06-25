@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>始業前点検 入力</title>
+<style>
+  :root {
+    --primary: #1a3a5c;
+    --accent:  #e85d04;
+    --ok:      #2d6a4f;
+    --ng:      #c1121f;
+    --na:      #6c757d;
+    --bg:      #f0f4f8;
+    --card:    #ffffff;
+    --border:  #d0dce8;
+    --text:    #1a2530;
+    --sub:     #5a6a78;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    padding-bottom: 100px;
+  }
+  header {
+    background: var(--primary);
+    color: #fff;
+    padding: 14px 16px 10px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  header h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.04em; }
+  header p  { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+  .header-accent { width: 36px; height: 3px; background: var(--accent); margin-top: 6px; border-radius: 2px; }
+
+  .info-section {
+    background: var(--card);
+    margin: 12px 12px 0;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .info-section-title {
+    background: var(--primary);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    letter-spacing: 0.08em;
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .info-field {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+  .info-field:nth-child(even) { border-right: none; }
+  .info-field.full { grid-column: 1 / -1; border-right: none; }
+  .info-field label {
+    display: block;
+    font-size: 10px;
+    color: var(--sub);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+  .info-field label span.req { color: var(--accent); margin-left: 2px; }
+  .info-field input, .info-field select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-appearance: none;
+  }
+  .info-field input:focus, .info-field select:focus {
+    outline: none; border-color: var(--primary); background: #fff;
+  }
+
+  /* 車両証跡写真 */
+  .vehicle-photo-section {
+    background: var(--card);
+    margin: 10px 12px 0;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .vehicle-photo-section .info-section-title { background: #2c5f2e; }
+  .vehicle-photo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .vehicle-photo-item {
+    padding: 10px 12px;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+  .vehicle-photo-item:last-child { border-right: none; }
+  .vehicle-photo-item label {
+    display: block;
+    font-size: 10px;
+    color: var(--sub);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .btn-photo {
+    width: 100%;
+    padding: 10px 6px;
+    background: #2c5f2e;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 6px;
+  }
+  .btn-photo.taken { background: var(--ok); }
+  .photo-thumb {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    display: none;
+    object-fit: cover;
+    height: 80px;
+  }
+  .photo-thumb.show { display: block; }
+  .photo-remove {
+    display: none;
+    font-size: 10px;
+    color: var(--ng);
+    cursor: pointer;
+    margin-top: 4px;
+    text-decoration: underline;
+  }
+  .photo-remove.show { display: block; }
+
+  .category {
+    margin: 10px 12px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .category-header {
+    background: var(--primary);
+    color: #fff;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cat-icon { font-size: 16px; }
+  .cat-title { font-size: 13px; font-weight: 700; letter-spacing: 0.05em; }
+  .cat-count {
+    margin-left: auto;
+    font-size: 11px;
+    background: rgba(255,255,255,0.2);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .check-item {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .item-label { font-size: 13px; font-weight: 600; margin-bottom: 2px; line-height: 1.4; }
+  .item-guide { font-size: 11px; color: var(--sub); margin-bottom: 8px; line-height: 1.5; }
+  .btn-group { display: flex; gap: 6px; }
+  .btn-check {
+    flex: 1;
+    padding: 9px 4px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .btn-check.ok { border-color: var(--ok); background: #d8f3dc; color: var(--ok); }
+  .btn-check.ng { border-color: var(--ng); background: #ffe0e0; color: var(--ng); }
+  .btn-check.na { border-color: var(--na); background: #e9ecef; color: var(--na); }
+  .note-area { margin-top: 6px; }
+  .note-area textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 12px;
+    background: var(--bg);
+    color: var(--text);
+    resize: none;
+    height: 52px;
+    font-family: inherit;
+  }
+  .note-area textarea:focus { outline: none; border-color: var(--primary); background: #fff; }
+  .ng-alert {
+    display: none;
+    background: #fff0f0;
+    border-left: 3px solid var(--ng);
+    padding: 6px 10px;
+    font-size: 11px;
+    color: var(--ng);
+    margin-top: 6px;
+    border-radius: 0 6px 6px 0;
+  }
+  .ng-alert.show { display: block; }
+
+  /* 異常写真エリア */
+  .ng-photo-area {
+    display: none;
+    margin-top: 8px;
+    background: #fff8f8;
+    border: 1px dashed var(--ng);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .ng-photo-area.show { display: block; }
+  .ng-photo-area .btn-ng-photo {
+    width: 100%;
+    padding: 9px;
+    background: var(--ng);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 6px;
+  }
+  .ng-photo-area .btn-ng-photo.taken { background: #6c4a4a; }
+  .ng-photo-thumb {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid #f5a0a0;
+    display: none;
+    object-fit: cover;
+    max-height: 140px;
+  }
+  .ng-photo-thumb.show { display: block; }
+  .ng-photo-info {
+    font-size: 10px;
+    color: var(--ng);
+    margin-bottom: 4px;
+  }
+  .ng-photo-remove {
+    display: none;
+    font-size: 10px;
+    color: var(--ng);
+    cursor: pointer;
+    margin-top: 4px;
+    text-decoration: underline;
+  }
+  .ng-photo-remove.show { display: block; }
+
+  .overall-section {
+    margin: 10px 12px 0;
+    background: var(--card);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .overall-section .info-section-title { background: #2c3e50; }
+  .overall-inner { padding: 12px 14px; }
+  .overall-inner label {
+    font-size: 11px; color: var(--sub); font-weight: 700;
+    letter-spacing: 0.06em; display: block; margin-bottom: 6px;
+  }
+  .overall-inner textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    background: var(--bg);
+    color: var(--text);
+    resize: none;
+    height: 70px;
+    font-family: inherit;
+    margin-bottom: 10px;
+  }
+  .overall-inner textarea:focus { outline: none; border-color: var(--primary); background: #fff; }
+
+  .progress-bar-wrap {
+    background: var(--primary);
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 10px 16px 14px;
+    box-shadow: 0 -3px 12px rgba(0,0,0,0.2);
+    z-index: 100;
+  }
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    color: #fff;
+    font-size: 12px;
+  }
+  .progress-info .pct { font-size: 16px; font-weight: 700; }
+  .progress-track { background: rgba(255,255,255,0.25); border-radius: 4px; height: 6px; margin-bottom: 10px; }
+  .progress-fill { background: var(--accent); height: 100%; border-radius: 4px; transition: width 0.3s; width: 0%; }
+  .btn-send {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: opacity 0.2s;
+  }
+  .btn-send:active { opacity: 0.8; }
+
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 20px;
+    margin: 20px;
+    max-width: 360px;
+    width: 100%;
+  }
+  .modal h2 { font-size: 16px; margin-bottom: 8px; color: var(--primary); }
+  .modal p  { font-size: 13px; color: var(--sub); line-height: 1.6; margin-bottom: 16px; }
+  .modal-summary {
+    background: #f0f4f8;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    margin-bottom: 16px;
+    line-height: 1.8;
+  }
+  .modal-btns { display: flex; gap: 8px; }
+  .modal-btns button {
+    flex: 1; padding: 11px; border-radius: 8px;
+    font-size: 14px; font-weight: 700; cursor: pointer; border: none;
+  }
+  .btn-copy  { background: var(--primary); color: #fff; }
+  .btn-email { background: var(--accent);  color: #fff; }
+  .btn-close { background: var(--border);  color: var(--text); }
+
+  /* 点検時間バナー */
+  .timer-banner {
+    margin: 10px 12px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid var(--accent);
+    background: var(--card);
+  }
+  .timer-banner-inner {
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .timer-icon { font-size: 22px; }
+  .timer-label { font-size: 11px; color: var(--sub); font-weight: 700; }
+  .timer-value { font-size: 22px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .timer-status { font-size: 11px; color: var(--sub); margin-top: 1px; }
+  .timer-warning {
+    background: #fff3cd;
+    border-color: #e8a000;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #7d4e00;
+    border-top: 1px solid #f0d080;
+  }
+  .timer-ok-msg {
+    background: #d8f3dc;
+    border-color: var(--ok);
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ok);
+    border-top: 1px solid #a8dbb0;
+  }
+
+  /* 点検時間バナー */
+  .timer-banner {
+    margin: 10px 12px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid var(--accent);
+    background: var(--card);
+  }
+  .timer-banner-inner {
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .timer-icon { font-size: 22px; }
+  .timer-label { font-size: 11px; color: var(--sub); font-weight: 700; }
+  .timer-value { font-size: 22px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .timer-status { font-size: 11px; color: var(--sub); margin-top: 1px; }
+  .timer-msg-warn { background: #fff3cd; padding: 6px 16px; font-size: 12px; font-weight: 700; color: #7d4e00; border-top: 1px solid #f0d080; }
+  .timer-msg-ok   { background: #d8f3dc; padding: 6px 16px; font-size: 12px; font-weight: 700; color: var(--ok); border-top: 1px solid #a8dbb0; }
+
+  /* 隠しcanvas（リサイズ用） */
+  #resizeCanvas { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚛 始業前日常点検</h1>
+  <p>運行前に必ずすべての項目を確認してください</p>
+  <div class="header-accent"></div>
+</header>
+
+<!-- 基本情報 -->
+<div class="info-section">
+  <div class="info-section-title">▶ 基本情報</div>
+  <div class="info-grid">
+    <div class="info-field">
+      <label>点検日時 <span class="req">*</span></label>
+      <input type="datetime-local" id="checkDate">
+    </div>
+    <div class="info-field">
+      <label>車種</label>
+      <select id="vehicleType">
+        <option value="">選択</option>
+        <option>普通トラック</option>
+        <option>大型トラック</option>
+        <option>トレーラー</option>
+        <option>フォークリフト</option>
+        <option>その他</option>
+      </select>
+    </div>
+    <div class="info-field">
+      <label>運転者氏名 <span class="req">*</span></label>
+      <input type="text" id="driverName" placeholder="氏名を入力">
+    </div>
+    <div class="info-field">
+      <label>配送先・運行区間</label>
+      <input type="text" id="route" placeholder="例）札幌→旭川">
+    </div>
+  </div>
+</div>
+
+<!-- 車両番号写真（点検スタート） -->
+<div class="vehicle-photo-section">
+  <div class="info-section-title">📷 STEP 1：ナンバー撮影（点検スタート）</div>
+  <div style="padding:10px 12px">
+    <button class="btn-photo" id="btnPlatePhoto" onclick="takeVehiclePhoto('plate')" style="width:100%;font-size:15px;padding:13px">📷 ナンバープレートを撮影してスタート</button>
+    <img class="photo-thumb" id="thumbPlate" alt="ナンバー写真" style="height:100px;margin-top:8px">
+    <div class="photo-remove" id="removePlate" onclick="removeVehiclePhoto('plate')" style="text-align:center">× 撮り直す</div>
+    <input type="text" id="plateNo" placeholder="車両番号（例：札幌 100 あ 1234）"
+      style="margin-top:8px;width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;background:var(--bg)">
+  </div>
+</div>
+
+<!-- タイマーバナー（ナンバー撮影後に表示・点検項目の上に固定） -->
+<div class="timer-banner" id="timerBanner" style="display:none">
+  <div class="timer-banner-inner">
+    <span class="timer-icon">⏱️</span>
+    <div style="flex:1">
+      <div class="timer-label">点検所要時間</div>
+      <div class="timer-value" id="timerValue">00:00</div>
+      <div class="timer-status" id="timerStatus">ナンバー撮影から計測中…</div>
+    </div>
+  </div>
+  <div id="timerMsg" style="display:none"></div>
+</div>
+
+<!-- 点検項目 -->
+<div id="checkList"></div>
+
+<!-- 総合所見 -->
+<div class="overall-section">
+  <div class="info-section-title">▶ 総合所見・特記事項</div>
+  <div class="overall-inner">
+    <label>気になること・申し送り事項など</label>
+    <textarea id="overallNote" placeholder="異常なし、または気になる点を記入してください"></textarea>
+  </div>
+</div>
+
+<!-- メーター写真（点検終了） -->
+<div class="vehicle-photo-section" style="border-color:var(--ok);margin-top:10px">
+  <div class="info-section-title" style="background:#2c5f2e">📷 STEP 2：メーター撮影（点検終了）</div>
+  <div style="padding:10px 12px">
+    <button class="btn-photo" id="btnMeterPhoto" onclick="takeVehiclePhoto('meter')" style="width:100%;font-size:15px;padding:13px;background:#2c5f2e">📷 走行距離メーターを撮影して終了</button>
+    <img class="photo-thumb" id="thumbMeter" alt="メーター写真" style="height:100px;margin-top:8px">
+    <div class="photo-remove" id="removeMeter" onclick="removeVehiclePhoto('meter')" style="text-align:center">× 撮り直す</div>
+    <input type="number" id="odometer" placeholder="走行距離（km）を入力"
+      style="margin-top:8px;width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;background:var(--bg)">
+  </div>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-info">
+    <span>点検進捗</span>
+    <span class="pct" id="pctText">0%</span>
+    <span id="countText">0 / 0 項目</span>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <button class="btn-send" id="btnSend" onclick="openSendModal()">📋 点検データを送信</button>
+</div>
+
+<div class="modal-overlay" id="sendModal">
+  <div class="modal">
+    <h2>📤 点検データ送信</h2>
+    <p>以下の内容で管理者へ送信します。</p>
+    <div class="modal-summary" id="modalSummary"></div>
+    <div id="sendStep1">
+      <div class="modal-btns">
+        <button class="btn-copy" onclick="doSend('email')">✉️ メールで送る</button>
+        <button class="btn-email" onclick="doSend('line')">💬 LINEで送る</button>
+      </div>
+      <button class="btn-close" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:var(--border);font-size:14px;font-weight:700;cursor:pointer" onclick="closeModal()">閉じる</button>
+    </div>
+    <div id="sendStep2" style="display:none">
+      <div id="sendGuide" style="background:#f0f8f0;border:1px solid var(--ok);border-radius:8px;padding:12px;font-size:13px;line-height:1.8;margin-bottom:12px"></div>
+      <button class="btn-copy" style="width:100%;padding:11px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff" onclick="openApp()">📤 アプリを開く</button>
+      <button class="btn-close" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:var(--border);font-size:14px;font-weight:700;cursor:pointer" onclick="closeModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="resizeCanvas"></canvas>
+
+<script>
+const CATEGORIES = [
+  { id:'engine', icon:'🔧', title:'エンジン・機関', items:[
+    {id:'e1',label:'エンジンオイル量',guide:'レベルゲージでMin〜Maxの間にあるか確認'},
+    {id:'e2',label:'エンジン冷却水量',guide:'リザーバータンクのMin〜Max間か確認'},
+    {id:'e3',label:'ファンベルトの緩み・損傷',guide:'指で押して10mm程度のたわみ、亀裂・摩耗がないか'},
+    {id:'e4',label:'エアクリーナーエレメント',guide:'詰まり・汚損がないか目視確認'},
+    {id:'e5',label:'エンジン始動・異音',guide:'スムーズに始動するか、異常な音・振動がないか'},
+    {id:'e6',label:'排気ガスの色・臭い',guide:'白煙・黒煙・青煙・異臭がないか'},
+  ]},
+  { id:'brake', icon:'🛑', title:'ブレーキ', items:[
+    {id:'b1',label:'ブレーキ液量',guide:'リザーバータンクのMin〜Max間にあるか'},
+    {id:'b2',label:'フットブレーキの効き',guide:'ペダルの踏み代・効き具合に異常がないか'},
+    {id:'b3',label:'パーキングブレーキの効き',guide:'引きしろが適正、坂道での効きを確認'},
+    {id:'b4',label:'エアブレーキ（エア圧）',guide:'エア圧が規定値（650〜900kPa）にあるか（該当車のみ）'},
+    {id:'b5',label:'ブレーキドラム・パッド',guide:'摩耗・熱変色・異物付着がないか'},
+  ]},
+  { id:'tire', icon:'🔄', title:'タイヤ・ホイール', items:[
+    {id:'t1',label:'タイヤ空気圧（全輪）',guide:'規定空気圧に合っているか（目視・タッチ確認）'},
+    {id:'t2',label:'タイヤ溝深さ・摩耗',guide:'溝が1.6mm以上あるか、偏摩耗がないか'},
+    {id:'t3',label:'タイヤ側面の亀裂・損傷',guide:'ひび割れ・キズ・異物刺さりがないか'},
+    {id:'t4',label:'ホイールナットの緩み',guide:'全輪のナットを手で回して緩みがないか'},
+    {id:'t5',label:'ホイールの変形・亀裂',guide:'目視でひび・欠けがないか'},
+  ]},
+  { id:'light', icon:'💡', title:'灯火類・電気系統', items:[
+    {id:'l1',label:'前照灯（ハイ・ロー）',guide:'点灯するか、光軸・光量に問題がないか'},
+    {id:'l2',label:'方向指示器（全4か所）',guide:'全て正常に点滅するか'},
+    {id:'l3',label:'制動灯（ブレーキランプ）',guide:'ブレーキを踏んで全て点灯するか'},
+    {id:'l4',label:'後退灯・車幅灯',guide:'点灯するか、レンズの破損がないか'},
+    {id:'l5',label:'バッテリー状態',guide:'警告灯が消灯、端子の腐食・緩みがないか'},
+  ]},
+  { id:'steering', icon:'🎯', title:'ステアリング・足回り', items:[
+    {id:'s1',label:'ハンドルの遊び・がたつき',guide:'遊びが過大でないか（目安：30mm以下）'},
+    {id:'s2',label:'パワステ液量',guide:'リザーバータンクのMin〜Max間にあるか'},
+    {id:'s3',label:'サスペンション・ショック',guide:'油漏れ・損傷・異音がないか'},
+    {id:'s4',label:'プロペラシャフト',guide:'Uジョイント・スプラインの摩耗・損傷がないか（目視）'},
+  ]},
+  { id:'body', icon:'🚛', title:'車体・荷台・安全装備', items:[
+    {id:'c1',label:'荷台・あおりの状態',guide:'損傷・がたつきがなく、確実に固定されているか'},
+    {id:'c2',label:'ウィンドシールド・窓',guide:'視界を妨げるひび・汚れがないか'},
+    {id:'c3',label:'ミラー（全ミラー）',guide:'位置・角度が正常、割れ・汚れがないか'},
+    {id:'c4',label:'消火器',guide:'設置場所に固定されているか、有効期限切れがないか'},
+    {id:'c5',label:'発炎筒・停止表示板',guide:'搭載されているか、発炎筒の有効期限内か'},
+    {id:'c6',label:'燃料残量',guide:'運行区間に見合う燃料があるか'},
+  ]},
+  { id:'driver', icon:'👤', title:'運転者健康・アルコール確認', items:[
+    {id:'d1',label:'アルコール検知器による確認',guide:'検知器を使用し、酒気帯びがないことを確認'},
+    {id:'d2',label:'疲労・睡眠不足の有無',guide:'十分な睡眠が取れているか、疲労感がないか'},
+    {id:'d3',label:'体調（発熱・頭痛・腹痛等）',guide:'運転に支障をきたす体調不良がないか'},
+    {id:'d4',label:'服薬の確認',guide:'眠気を催す薬を服用していないか'},
+  ]},
+];
+
+let checkData = {};
+// 車両証跡写真（ナンバー・メーター）
+let vehiclePhotos = { plate: null, meter: null };
+
+// ========== 画像圧縮（共通） ==========
+function resizeImage(file, maxSize, quality, callback) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.getElementById('resizeCanvas');
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize; } }
+      else        { if (h > maxSize) { w = w * maxSize / h; h = maxSize; } }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ========== 点検タイマー ==========
+let timerStart = null;   // ナンバー撮影時刻
+let timerEnd   = null;   // メーター撮影時刻
+let timerInterval = null;
+const MIN_SECONDS = 5 * 60;  // 5分未満は警告
+
+function startTimer() {
+  timerStart = new Date();
+  document.getElementById('timerBanner').style.display = 'block';
+  document.getElementById('timerStatus').textContent = 'ナンバー撮影から計測中…';
+  document.getElementById('timerMsg').style.display = 'none';
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (timerEnd) return;
+    const elapsed = Math.floor((new Date() - timerStart) / 1000);
+    document.getElementById('timerValue').textContent = formatTime(elapsed);
+  }, 1000);
+}
+
+function stopTimer() {
+  timerEnd = new Date();
+  clearInterval(timerInterval);
+  const elapsed = Math.floor((timerEnd - timerStart) / 1000);
+  document.getElementById('timerValue').textContent = formatTime(elapsed);
+  document.getElementById('timerStatus').textContent = 'メーター撮影で計測完了';
+
+  const msgEl = document.getElementById('timerMsg');
+  msgEl.style.display = 'block';
+  if (elapsed < MIN_SECONDS) {
+    msgEl.className = 'timer-msg-warn';
+    msgEl.textContent = `⚠️ 点検時間が短すぎます（${formatTime(elapsed)}）。通常の点検は10〜15分かかります。`;
+  } else {
+    msgEl.className = 'timer-msg-ok';
+    msgEl.textContent = `✅ 点検完了：${formatTime(elapsed)}（適切な点検時間です）`;
+  }
+}
+
+function formatTime(sec) {
+  const m = String(Math.floor(sec / 60)).padStart(2, '0');
+  const s = String(sec % 60).padStart(2, '0');
+  return m + ':' + s;
+}
+
+// ========== 車両証跡写真 ==========
+function takeVehiclePhoto(type) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.capture = 'environment';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    resizeImage(file, 1200, 0.7, b64 => {
+      vehiclePhotos[type] = b64;
+      vehiclePhotos[type + '_time'] = new Date().toISOString();  // 撮影時刻記録
+      const suffix = type === 'plate' ? 'Plate' : 'Meter';
+      const thumb  = document.getElementById('thumb'  + suffix);
+      const remove = document.getElementById('remove' + suffix);
+      const btn    = document.getElementById('btn'    + suffix + 'Photo');
+      thumb.src = b64;
+      thumb.classList.add('show');
+      remove.classList.add('show');
+      btn.textContent = '📷 撮り直す';
+      btn.classList.add('taken');
+
+      // タイマー制御
+      if (type === 'plate') startTimer();
+      if (type === 'meter' && timerStart) stopTimer();
+    });
+  };
+  input.click();
+}
+
+function removeVehiclePhoto(type) {
+  vehiclePhotos[type] = null;
+  vehiclePhotos[type + '_time'] = null;
+  const isPlate = type === 'plate';
+  const suffix  = isPlate ? 'Plate' : 'Meter';
+  document.getElementById('thumb'  + suffix).classList.remove('show');
+  document.getElementById('remove' + suffix).classList.remove('show');
+  const btn = document.getElementById('btn' + suffix + 'Photo');
+  btn.textContent = isPlate ? '📷 ナンバーを撮影' : '📷 メーターを撮影';
+  btn.classList.remove('taken');
+
+  // ナンバー削除ならタイマーリセット
+  if (isPlate) {
+    timerStart = null; timerEnd = null;
+    clearInterval(timerInterval);
+    document.getElementById('timerBanner').style.display = 'none';
+  }
+  // メーター削除なら計測を再開
+  if (!isPlate && timerStart) {
+    timerEnd = null;
+    document.getElementById('timerStatus').textContent = 'ナンバー撮影から計測中…';
+    document.getElementById('timerMsg').style.display = 'none';
+    timerInterval = setInterval(() => {
+      const elapsed = Math.floor((new Date() - timerStart) / 1000);
+      document.getElementById('timerValue').textContent = formatTime(elapsed);
+    }, 1000);
+  }
+}
+
+// ========== 点検UI構築 ==========
+function buildUI() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('checkDate').value = now.toISOString().slice(0,16);
+
+  const container = document.getElementById('checkList');
+  CATEGORIES.forEach(cat => {
+    const catDiv = document.createElement('div');
+    catDiv.className = 'category';
+    catDiv.innerHTML = `
+      <div class="category-header">
+        <span class="cat-icon">${cat.icon}</span>
+        <span class="cat-title">${cat.title}</span>
+        <span class="cat-count" id="cnt-${cat.id}">0/${cat.items.length}</span>
+      </div>
+    `;
+    cat.items.forEach(item => {
+      checkData[item.id] = { result: null, note: '', photo: null };
+      const div = document.createElement('div');
+      div.className = 'check-item';
+      div.id = 'item-' + item.id;
+      div.innerHTML = `
+        <div class="item-label">${item.label}</div>
+        <div class="item-guide">${item.guide}</div>
+        <div class="btn-group">
+          <button class="btn-check" onclick="setResult('${item.id}','ok',this)">✅ 異常なし</button>
+          <button class="btn-check" onclick="setResult('${item.id}','ng',this)">❌ 異常あり</button>
+          <button class="btn-check" onclick="setResult('${item.id}','na',this)">－ 該当なし</button>
+        </div>
+        <div class="ng-alert" id="ng-${item.id}">⚠️ 異常内容を備考欄に記入し、写真を撮影してください</div>
+        <div class="note-area">
+          <textarea id="note-${item.id}" placeholder="備考（任意）" oninput="setNote('${item.id}',this.value)"></textarea>
+        </div>
+        <div class="ng-photo-area" id="ngphoto-${item.id}">
+          <div class="ng-photo-info">📷 異常箇所の写真（自動縮小されます）</div>
+          <button class="btn-ng-photo" onclick="takeNgPhoto('${item.id}')">📷 異常箇所を撮影</button>
+          <img class="ng-photo-thumb" id="ngthumb-${item.id}" alt="異常写真">
+          <div class="ng-photo-remove" id="ngremove-${item.id}" onclick="removeNgPhoto('${item.id}')">× 写真を削除</div>
+        </div>
+      `;
+      catDiv.appendChild(div);
+    });
+    container.appendChild(catDiv);
+  });
+  updateProgress();
+}
+
+function setResult(id, result, btn) {
+  checkData[id].result = result;
+  const item = document.getElementById('item-' + id);
+  item.querySelectorAll('.btn-check').forEach(b => b.className = 'btn-check');
+  btn.classList.add(result);
+  const isNg = result === 'ng';
+  document.getElementById('ng-' + id).className      = 'ng-alert'     + (isNg ? ' show' : '');
+  document.getElementById('ngphoto-' + id).className = 'ng-photo-area' + (isNg ? ' show' : '');
+  if (!isNg) {
+    removeNgPhoto(id);
+  }
+  updateProgress();
+}
+function setNote(id, val) { checkData[id].note = val; }
+
+function takeNgPhoto(id) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.capture = 'environment';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    // 長辺800px、品質60%に圧縮
+    resizeImage(file, 800, 0.6, b64 => {
+      checkData[id].photo = b64;
+      const thumb  = document.getElementById('ngthumb-'  + id);
+      const remove = document.getElementById('ngremove-' + id);
+      const btn    = document.querySelector(`#ngphoto-${id} .btn-ng-photo`);
+      thumb.src = b64;
+      thumb.classList.add('show');
+      remove.classList.add('show');
+      btn.textContent = '📷 撮り直す';
+      btn.classList.add('taken');
+    });
+  };
+  input.click();
+}
+function removeNgPhoto(id) {
+  checkData[id].photo = null;
+  const thumb  = document.getElementById('ngthumb-'  + id);
+  const remove = document.getElementById('ngremove-' + id);
+  const btn    = document.querySelector(`#ngphoto-${id} .btn-ng-photo`);
+  if (thumb)  { thumb.classList.remove('show'); thumb.src = ''; }
+  if (remove) { remove.classList.remove('show'); }
+  if (btn)    { btn.textContent = '📷 異常箇所を撮影'; btn.classList.remove('taken'); }
+}
+
+function updateProgress() {
+  const total = Object.keys(checkData).length;
+  const done  = Object.values(checkData).filter(v => v.result !== null).length;
+  const pct   = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('pctText').textContent = pct + '%';
+  document.getElementById('countText').textContent = `${done} / ${total} 項目`;
+  CATEGORIES.forEach(cat => {
+    const d = cat.items.filter(i => checkData[i.id].result !== null).length;
+    document.getElementById('cnt-' + cat.id).textContent = `${d}/${cat.items.length}`;
+  });
+  const ngCount = Object.values(checkData).filter(v => v.result === 'ng').length;
+  document.getElementById('btnSend').textContent = ngCount > 0
+    ? `📋 点検データを送信（⚠️ 異常${ngCount}件あり）`
+    : `📋 点検データを送信`;
+}
+
+// ========== データ生成 ==========
+function buildJson() {
+  const items = {};
+  CATEGORIES.forEach(cat => {
+    cat.items.forEach(item => {
+      items[item.id] = {
+        label:  item.label,
+        result: checkData[item.id].result,
+        note:   checkData[item.id].note,
+        photo:  checkData[item.id].photo,   // base64 or null
+      };
+    });
+  });
+  const ngItems = Object.values(items).filter(i => i.result === 'ng').map(i => i.label);
+  return {
+    version:      '1.1',
+    type:         'truck_daily_check',
+    checkDate:    document.getElementById('checkDate').value,
+    plateNo:      document.getElementById('plateNo').value,
+    driverName:   document.getElementById('driverName').value,
+    vehicleType:  document.getElementById('vehicleType').value,
+    odometer:     document.getElementById('odometer').value,
+    route:        document.getElementById('route').value,
+    overallNote:  document.getElementById('overallNote').value,
+    photoPlate:      vehiclePhotos.plate,
+    photoPlateTime:  vehiclePhotos.plate_time || null,
+    photoMeter:      vehiclePhotos.meter,
+    photoMeterTime:  vehiclePhotos.meter_time || null,
+    inspectionSec:   (timerStart && timerEnd) ? Math.floor((timerEnd - timerStart) / 1000) : null,
+    inspectionTime:  (timerStart && timerEnd) ? formatTime(Math.floor((timerEnd - timerStart) / 1000)) : null,
+    ngItems,
+    allDone:      Object.values(checkData).every(v => v.result !== null),
+    ngCount:      ngItems.length,
+    items,
+    submittedAt:  new Date().toISOString()
+  };
+}
+
+let currentJson = null;
+
+function openSendModal() {
+  const req = ['checkDate','driverName'];
+  const labels = {checkDate:'点検日時', driverName:'運転者氏名'};
+  for (const id of req) {
+    if (!document.getElementById(id).value.trim()) {
+      alert(`「${labels[id]}」を入力してください`);
+      document.getElementById(id).focus();
+      return;
+    }
+  }
+  if (!vehiclePhotos.plate && !document.getElementById('plateNo').value.trim()) {
+    alert('車両番号の写真またはテキスト入力が必要です');
+    return;
+  }
+  currentJson = buildJson();
+  const ng = currentJson.ngCount > 0
+    ? `⚠️ 異常 ${currentJson.ngCount} 件：${currentJson.ngItems.join('、')}`
+    : '✅ 異常なし';
+  const photoCount = Object.values(currentJson.items).filter(i => i.photo).length;
+  document.getElementById('modalSummary').innerHTML = `
+    <b>日時：</b>${currentJson.checkDate}<br>
+    <b>車両：</b>${currentJson.plateNo || '（写真で確認）'} ${currentJson.vehicleType}<br>
+    <b>運転者：</b>${currentJson.driverName}<br>
+    <b>判定：</b>${ng}<br>
+    <b>異常写真：</b>${photoCount}枚添付<br>
+    <b>車両証跡：</b>ナンバー${vehiclePhotos.plate?'✅':'—'} / メーター${vehiclePhotos.meter?'✅':'—'}<br>
+    <b>点検時間：</b>${currentJson.inspectionTime ? currentJson.inspectionTime + (currentJson.inspectionSec < 300 ? ' ⚠️短い' : ' ✅適切') : '（計測中または未完了）'}
+  `;
+  document.getElementById('sendModal').classList.add('show');
+}
+function closeModal() { document.getElementById('sendModal').classList.remove('show'); }
+
+// ========== ファイル保存（共通） ==========
+function saveJsonFile() {
+  const text = JSON.stringify(currentJson, null, 2);
+  const blob = new Blob([text], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = (currentJson.checkDate || '').replace(/[:\-T]/g, '').slice(0, 12);
+  const plate = (currentJson.plateNo || 'unknown').replace(/\s/g, '');
+  a.href     = url;
+  a.download = `点検_${date}_${plate}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function buildSummaryText() {
+  const ng = currentJson.ngCount > 0
+    ? `⚠️ 異常（${currentJson.ngCount}件）：${currentJson.ngItems.join('、')}`
+    : '✅ 異常なし';
+  const photoCount = Object.values(currentJson.items).filter(i => i.photo).length;
+  const timeStr = currentJson.inspectionTime
+    ? `点検時間：${currentJson.inspectionTime}${currentJson.inspectionSec < 300 ? '（⚠️短い）' : ''}`
+    : '点検時間：未計測';
+  return (
+    `【始業前点検サマリー】\n` +
+    `点検日時：${currentJson.checkDate}\n` +
+    `車両番号：${currentJson.plateNo}\n` +
+    `運転者　：${currentJson.driverName}\n` +
+    `車種　　：${currentJson.vehicleType}\n` +
+    `走行距離：${currentJson.odometer} km\n` +
+    `運行区間：${currentJson.route}\n` +
+    `${timeStr}\n` +
+    `判定　　：${ng}\n` +
+    `異常写真：${photoCount}枚\n` +
+    `所見　　：${currentJson.overallNote}`
+  );
+}
+
+let sendMode = null;
+function doSend(mode) {
+  sendMode = mode;
+  // まずファイルを自動保存
+  saveJsonFile();
+  // ステップ2のガイドを表示
+  document.getElementById('sendStep1').style.display = 'none';
+  document.getElementById('sendStep2').style.display = 'block';
+  const date = (currentJson.checkDate || '').replace(/[:\-T]/g, '').slice(0, 12);
+  const plate = (currentJson.plateNo || 'unknown').replace(/\s/g, '');
+  const fname = `点検_${date}_${plate}.json`;
+  if (mode === 'email') {
+    document.getElementById('sendGuide').innerHTML =
+      `<b>✅ JSONファイルを保存しました</b><br>` +
+      `ファイル名：<code>${fname}</code><br><br>` +
+      `①「アプリを開く」でメールアプリが開きます<br>` +
+      `②本文にサマリーが入っています<br>` +
+      `③ダウンロードフォルダから<b>${fname}</b>を添付して送信してください`;
+  } else {
+    document.getElementById('sendGuide').innerHTML =
+      `<b>✅ JSONファイルを保存しました</b><br>` +
+      `ファイル名：<code>${fname}</code><br><br>` +
+      `①「アプリを開く」でLINEが開きます<br>` +
+      `②テキストを送信後、ファイルアイコンから<br>　<b>${fname}</b>を添付して送信してください<br>` +
+      `③ダウンロードフォルダにあります`;
+  }
+}
+
+function openApp() {
+  if (!currentJson) return;
+  const summary = buildSummaryText();
+  if (sendMode === 'email') {
+    const date = (currentJson.checkDate || '').replace(/[:\-T]/g, '').slice(0, 12);
+    const plate = (currentJson.plateNo || 'unknown').replace(/\s/g, '');
+    const subject = encodeURIComponent(`始業前点検 ${currentJson.checkDate} ${currentJson.plateNo} ${currentJson.driverName}`);
+    const body = encodeURIComponent(summary + '\n\n※JSONファイル（点検_' + date + '_' + plate + '.json）を添付してください');
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  } else {
+    // LINE URLスキーム
+    window.location.href = `https://line.me/R/share?text=${encodeURIComponent(summary)}`;
+  }
+}
+
+buildUI();
+</script>
+</body>
+</html>

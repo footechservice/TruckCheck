@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>始業前日常点検 管理者確認・印刷</title>
+<style>
+  :root {
+    --primary: #1a3a5c;
+    --accent:  #e85d04;
+    --ok:      #2d6a4f;
+    --ng:      #c1121f;
+    --na:      #888;
+    --bg:      #f0f4f8;
+    --card:    #ffffff;
+    --border:  #d0dce8;
+    --text:    #1a2530;
+    --sub:     #5a6a78;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  /* ========== 画面表示 ========== */
+  @media screen {
+    .screen-only { display: block; }
+    .print-only  { display: none !important; }
+
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    header h1 { font-size: 20px; font-weight: 700; }
+    header p  { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+    .header-right {
+      margin-left: auto;
+      display: flex; gap: 10px;
+    }
+    .btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-outline { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.5); }
+    .btn-green   { background: var(--ok); color: #fff; }
+
+    main { max-width: 960px; margin: 0 auto; padding: 24px; }
+
+    /* ドロップゾーン */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 48px 24px;
+      text-align: center;
+      background: var(--card);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 24px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--primary);
+      background: #e8f0f8;
+    }
+    .drop-zone-icon { font-size: 40px; margin-bottom: 12px; }
+    .drop-zone h2   { font-size: 17px; color: var(--primary); margin-bottom: 6px; }
+    .drop-zone p    { font-size: 13px; color: var(--sub); }
+    .drop-zone input[type=file] { display: none; }
+    .btn-load {
+      display: inline-block;
+      margin-top: 16px;
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* またはJSONペースト */
+    .or-divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 0 0 16px;
+      color: var(--sub); font-size: 13px;
+    }
+    .or-divider::before, .or-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .json-paste-area textarea {
+      width: 100%;
+      height: 120px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      font-family: monospace;
+      background: var(--card);
+      color: var(--text);
+      resize: vertical;
+    }
+    .json-paste-area textarea:focus { outline: none; border-color: var(--primary); }
+    .btn-parse {
+      margin-top: 8px;
+      background: var(--primary);
+      color: #fff;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* サマリーカード */
+    .summary-card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .summary-header {
+      background: var(--primary);
+      color: #fff;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .summary-header h2 { font-size: 15px; }
+    .badge-ng {
+      margin-left: auto;
+      background: var(--ng);
+      color: #fff;
+      padding: 3px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .badge-ok {
+      margin-left: auto;
+      background: var(--ok);
+      color: #fff;
+      padding: 3px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .info-grid-pc {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+    }
+    .info-cell {
+      padding: 12px 16px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .info-cell:nth-child(4n) { border-right: none; }
+    .info-cell.span2 { grid-column: span 2; }
+    .info-cell label {
+      font-size: 10px;
+      color: var(--sub);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .info-cell .val {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* 異常サマリー */
+    .ng-summary {
+      background: #fff8f8;
+      border-left: 4px solid var(--ng);
+      margin: 0 20px 16px;
+      padding: 10px 14px;
+      border-radius: 0 8px 8px 0;
+    }
+    .ng-summary h3 { font-size: 13px; color: var(--ng); margin-bottom: 6px; }
+    .ng-summary ul { padding-left: 16px; }
+    .ng-summary li { font-size: 13px; margin-bottom: 2px; }
+
+    /* 点検テーブル */
+    .check-table-wrap {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .check-table-header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      background: #f0f4f8;
+      font-size: 11px;
+      color: var(--sub);
+      font-weight: 700;
+      padding: 7px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #edf2f7;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr.row-ng { background: #fff8f8; }
+    .result-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .result-badge.ok { background: #d8f3dc; color: var(--ok); }
+    .result-badge.ng { background: #ffe0e0; color: var(--ng); }
+    .result-badge.na { background: #e9ecef; color: var(--na); }
+    .result-badge.none { background: #fff3cd; color: #856404; }
+
+    /* 管理者確認 */
+    .manager-section {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .manager-header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .manager-inner {
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    .manager-field label {
+      font-size: 11px; color: var(--sub); font-weight: 700;
+      letter-spacing: 0.06em; display: block; margin-bottom: 6px;
+    }
+    .manager-field input, .manager-field select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 13px;
+      background: var(--bg);
+    }
+    .manager-field input:focus, .manager-field select:focus {
+      outline: none; border-color: var(--primary); background: #fff;
+    }
+    .manager-field.full { grid-column: 1 / -1; }
+    .manager-field textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 13px;
+      background: var(--bg);
+      height: 64px;
+      resize: none;
+      font-family: inherit;
+    }
+    .judge-btns { display: flex; gap: 10px; margin-top: 6px; }
+    .judge-btn {
+      flex: 1; padding: 12px; border-radius: 8px;
+      font-size: 14px; font-weight: 700; cursor: pointer; border: 2px solid;
+      transition: all 0.15s;
+    }
+    .judge-btn.runok  { border-color: var(--ok);  color: var(--ok);  background: #d8f3dc; }
+    .judge-btn.runnok { border-color: var(--ng);  color: var(--ng);  background: #ffe0e0; }
+    .judge-btn.active.runok  { background: var(--ok);  color: #fff; }
+    .judge-btn.active.runnok { background: var(--ng);  color: #fff; }
+  }
+
+  /* ========== 印刷スタイル ========== */
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .screen-only { display: none !important; }
+    .print-only  { display: block !important; }
+
+    body { font-size: 8.5pt; background: #fff; }
+
+    .print-wrap { padding: 4mm 6mm; }
+
+    /* ヘッダー */
+    .print-header {
+      display: flex;
+      align-items: baseline;
+      border-bottom: 2pt solid #1a3a5c;
+      padding-bottom: 2mm;
+      margin-bottom: 2mm;
+    }
+    .print-company { font-size: 7pt; color: #555; white-space: nowrap; }
+    .print-title {
+      font-size: 14pt; font-weight: 700;
+      color: #1a3a5c; margin: 0 auto;
+      white-space: nowrap;
+    }
+    .print-date { font-size: 7pt; color: #555; text-align: right; white-space: nowrap; }
+
+    /* 基本情報テーブル */
+    .print-info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2mm;
+      font-size: 8pt;
+    }
+    .print-info-table th, .print-info-table td {
+      border: 0.5pt solid #999;
+      padding: 1mm 2mm;
+    }
+    .print-info-table th {
+      background: #e8eef5; font-weight: 700;
+      width: 14%; white-space: nowrap;
+    }
+
+    /* 運行可否判定ボックス - 判定のみシンプルに */
+    .print-judge-box {
+      border: 1.5pt solid #1a3a5c;
+      border-radius: 2mm;
+      padding: 1.5mm 4mm;
+      margin-bottom: 2mm;
+      display: flex;
+      align-items: center;
+      gap: 6mm;
+    }
+    .print-judge-label {
+      font-size: 8.5pt; font-weight: 700; color: #1a3a5c;
+      white-space: nowrap;
+    }
+    .print-judge-result {
+      font-size: 12pt; font-weight: 700;
+      white-space: nowrap;
+    }
+    .print-judge-result.ok  { color: #2d6a4f; }
+    .print-judge-result.ng  { color: #c1121f; }
+    .print-judge-mgr-label { display: none; }
+    .print-judge-mgr-name  { display: none; }
+
+    /* カテゴリタイトル */
+    .print-section-title {
+      background: #1a3a5c;
+      color: #fff;
+      font-size: 8pt; font-weight: 700;
+      padding: 0.8mm 3mm;
+      margin: 2mm 0 0;
+    }
+
+    /* ページ区切り制御 */
+    .print-section-block { page-break-inside: avoid; break-inside: avoid; }
+    .print-check-table tr { page-break-inside: avoid; break-inside: avoid; }
+    .print-sign-table { page-break-inside: avoid; break-inside: avoid; }
+    .print-section-title { page-break-after: avoid; break-after: avoid; }
+
+    /* 点検テーブル - コンパクト */
+    .print-check-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 7.8pt;
+      margin-bottom: 0;
+      table-layout: fixed;
+    }
+    .print-check-table th {
+      background: #f0f4f8;
+      border: 0.5pt solid #ccc;
+      padding: 0.8mm 2mm;
+      font-weight: 700;
+    }
+    .print-check-table td {
+      border: 0.5pt solid #ccc;
+      padding: 0.6mm 2mm;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .print-check-table td:last-child { white-space: normal; }
+    .print-check-table tr.row-ng { background: #fff0f0; }
+    .pr-ok  { color: #2d6a4f; font-weight: 700; white-space: nowrap; }
+    .pr-ng  { color: #c1121f; font-weight: 700; white-space: nowrap; }
+    .pr-na  { color: #777; white-space: nowrap; }
+    .pr-non { color: #856404; white-space: nowrap; }
+
+    /* 車両証跡写真 */
+    .print-vehicle-photos {
+      display: flex; gap: 4mm; margin-bottom: 2mm;
+      page-break-inside: avoid; break-inside: avoid;
+    }
+    .print-vehicle-photo-box {
+      flex: 1; border: 0.5pt solid #999; border-radius: 2mm;
+      padding: 2mm; text-align: center;
+    }
+    .print-vehicle-photo-box label {
+      font-size: 7pt; color: #555; font-weight: 700;
+      display: block; margin-bottom: 1mm;
+    }
+    .print-vehicle-photo-box img {
+      max-width: 100%; max-height: 28mm; object-fit: contain; border-radius: 1mm;
+    }
+    .print-vehicle-photo-box .no-photo {
+      height: 20mm; display: flex; align-items: center;
+      justify-content: center; color: #bbb; font-size: 7.5pt;
+      background: #f8f8f8; border-radius: 1mm;
+    }
+    /* 異常写真（行内） */
+    .print-ng-photo {
+      max-width: 38mm; max-height: 28mm; object-fit: contain;
+      border: 0.5pt solid #f5a0a0; border-radius: 1mm; vertical-align: middle;
+    }
+
+    /* 管理者確認・署名テーブル */
+    .print-sign-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2mm;
+      font-size: 8pt;
+    }
+    .print-sign-table th, .print-sign-table td {
+      border: 0.5pt solid #999;
+      padding: 1mm 2mm;
+    }
+    .print-sign-table th {
+      background: #e8eef5; font-weight: 700;
+      width: 10%; white-space: nowrap;
+    }
+    .sign-box { height: 10mm; }
+
+    /* フッター */
+    .print-footer {
+      margin-top: 2mm;
+      border-top: 0.5pt solid #ccc;
+      padding-top: 1mm;
+      font-size: 6.5pt;
+      color: #777;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @page { size: A4 portrait; margin: 8mm; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 画面表示部 ===== -->
+<div class="screen-only">
+  <header>
+    <div>
+      <h1>🚛 始業前日常点検 管理者確認</h1>
+      <p>ドライバーから受信したJSONデータを読み込んで確認・印刷します</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-outline" onclick="resetAll()">🔄 リセット</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ 印刷・PDF</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- 読み込みエリア -->
+    <div id="loadArea">
+      <div class="drop-zone" id="dropZone"
+           onclick="document.getElementById('fileInput').click()"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)"
+           ondrop="onDrop(event)">
+        <div class="drop-zone-icon">📂</div>
+        <h2>JSONファイルをドラッグ＆ドロップ</h2>
+        <p>または下のボタンからファイルを選択してください</p>
+        <div class="btn-load">ファイルを選択</div>
+        <input type="file" id="fileInput" accept=".json,.txt" onchange="onFileSelect(event)">
+      </div>
+
+      <div class="or-divider">または JSONを直接貼り付け</div>
+      <div class="json-paste-area">
+        <textarea id="jsonPaste" placeholder="LINEやメールで受信したJSONをここに貼り付けてください..."></textarea>
+        <button class="btn-parse" onclick="parseFromPaste()">読み込む</button>
+      </div>
+    </div>
+
+    <!-- 表示エリア -->
+    <div id="resultArea" style="display:none">
+      <!-- サマリーカード -->
+      <div class="summary-card">
+        <div class="summary-header">
+          <span style="font-size:18px">📋</span>
+          <h2>点検サマリー</h2>
+          <span id="summaryBadge" class="badge-ok">異常なし</span>
+        </div>
+        <div class="info-grid-pc" id="infoGrid"></div>
+        <div id="ngSummary" style="display:none" class="ng-summary">
+          <h3>⚠️ 異常項目一覧</h3>
+          <ul id="ngList"></ul>
+        </div>
+      </div>
+
+      <!-- 点検結果テーブル -->
+      <div id="checkTables"></div>
+
+      <!-- 管理者確認 -->
+      <div class="manager-section">
+        <div class="manager-header">▶ 運行管理者 確認・承認</div>
+        <div class="manager-inner">
+          <div class="manager-field">
+            <label>確認日時</label>
+            <input type="datetime-local" id="managerDate">
+          </div>
+          <div class="manager-field">
+            <label>運行管理者名</label>
+            <input type="text" id="managerName" placeholder="氏名を入力">
+          </div>
+          <div class="manager-field">
+            <label>運行可否判断</label>
+            <div class="judge-btns">
+              <button class="judge-btn runok"  id="judgeOK"  onclick="setJudge('ok')">✅ 運行可</button>
+              <button class="judge-btn runnok" id="judgeNG"  onclick="setJudge('ng')">🚫 運行不可</button>
+            </div>
+          </div>
+          <div class="manager-field full">
+            <label>管理者コメント・指示</label>
+            <textarea id="managerComment" placeholder="異常への対応指示、確認事項など"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===== 印刷用レイアウト ===== -->
+<div class="print-only" id="printArea">
+  <div class="print-wrap">
+    <div class="print-header">
+      <div class="print-company" id="pCompany">フーテックサービス株式会社</div>
+      <div class="print-title">始業前日常点検記録票</div>
+      <div class="print-date" id="pPrintDate"></div>
+    </div>
+
+    <div class="print-judge-box" id="pJudgeBox">
+      <span class="print-judge-label">運行管理者 判定：</span>
+      <span class="print-judge-result" id="pJudgeResult">—</span>
+    </div>
+
+    <table class="print-info-table">
+      <tr>
+        <th>点検日時</th><td id="pDate"></td>
+        <th>車両番号</th><td id="pPlate"></td>
+      </tr>
+      <tr>
+        <th>運転者氏名</th><td id="pDriver"></td>
+        <th>車種</th><td id="pVehicle"></td>
+      </tr>
+      <tr>
+        <th>走行距離</th><td id="pOdometer"></td>
+        <th>運行区間</th><td id="pRoute"></td>
+      </tr>
+      <tr>
+        <th>点検所要時間</th><td id="pInspTime"></td>
+        <th>ナンバー撮影</th><td id="pPlateTime"></td>
+      </tr>
+      <tr>
+        <th>総合所見</th><td colspan="3" id="pOverall"></td>
+      </tr>
+    </table>
+
+    <!-- 車両証跡写真（ナンバー・メーター） -->
+    <div class="print-vehicle-photos" id="pVehiclePhotos" style="display:none"></div>
+
+    <div id="pCheckTables"></div>
+
+    <table class="print-sign-table">
+      <tr>
+        <th>管理者確認日時</th><td id="pMgrDate"></td>
+        <th>管理者氏名</th><td id="pMgrName"></td>
+      </tr>
+      <tr>
+        <th>管理者指示</th><td colspan="3" id="pMgrComment"></td>
+      </tr>
+      <tr>
+        <th style="width:10%">運転者署名</th><td class="sign-box" style="width:40%"></td>
+        <th style="width:10%">管理者署名</th><td class="sign-box" style="width:40%"></td>
+      </tr>
+    </table>
+
+    <div class="print-footer">
+      <span>フーテックサービス株式会社 〒002-8026 札幌市北区篠路6条3丁目7-3 TEL: 011-555-8569</span>
+      <span id="pFooterDate"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== データ ==========
+// 自動車点検基準 別表第１（事業用自動車の日常点検基準）準拠
+const CATEGORIES = [
+  { id:'brake', icon:'🛑', title:'ブレーキ', items:[
+    {id:'b1',label:'ブレーキ液量'},
+    {id:'b2',label:'フットブレーキの踏みしろ・効き'},
+    {id:'b3',label:'駐車ブレーキの引きしろ'},
+    {id:'b4',label:'エアブレーキ・空気圧の上がり具合'},
+    {id:'b5',label:'ブレーキバルブからの排気音'},
+  ]},
+  { id:'tire', icon:'🔄', title:'タイヤ', items:[
+    {id:'t1',label:'タイヤ空気圧（全輪）'},
+    {id:'t2',label:'亀裂・損傷・異物'},
+    {id:'t3',label:'異状な摩耗'},
+    {id:'t4',label:'溝の深さ'},
+    {id:'t5',label:'ディスクホイール取付状態'},
+  ]},
+  { id:'battery', icon:'🔋', title:'バッテリー', items:[
+    {id:'ba1',label:'バッテリー液量'},
+  ]},
+  { id:'engine', icon:'🔧', title:'原動機（エンジン）', items:[
+    {id:'e1',label:'冷却水量'},
+    {id:'e2',label:'ファンベルトの張り・損傷'},
+    {id:'e3',label:'エンジンオイル量'},
+    {id:'e4',label:'エンジンのかかり具合・異音'},
+    {id:'e5',label:'低速・加速の状態'},
+  ]},
+  { id:'light', icon:'💡', title:'灯火装置・方向指示器', items:[
+    {id:'l1',label:'灯火装置・方向指示器の点灯・点滅'},
+    {id:'l2',label:'灯火装置の汚れ・損傷'},
+  ]},
+  { id:'washer', icon:'🪟', title:'ウインドウォッシャー・ワイパー', items:[
+    {id:'w1',label:'ウォッシャー液量・噴射状態'},
+    {id:'w2',label:'ワイパーの払拭状態'},
+  ]},
+  { id:'airtank', icon:'💨', title:'エアタンク', items:[
+    {id:'at1',label:'エアタンクの凝水'},
+  ]},
+  { id:'previous', icon:'📋', title:'前回運行の異状箇所', items:[
+    {id:'p1',label:'前回・前日の運行で異状があった箇所'},
+  ]},
+  { id:'driver', icon:'👤', title:'運転者の状態', items:[
+    {id:'d1',label:'アルコール検知器による確認'},
+    {id:'d2',label:'疲労・睡眠不足の有無'},
+    {id:'d3',label:'体調（発熱・頭痛・腹痛等）'},
+    {id:'d4',label:'服薬の確認'},
+  ]},
+];
+let currentData = null;
+let judgeResult = null;
+
+// ========== ファイル読み込み ==========
+function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over'); }
+function onDragLeave()  { document.getElementById('dropZone').classList.remove('drag-over'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) readFile(file);
+}
+function onFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) readFile(file);
+}
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      let text = ev.target.result;
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      loadData(JSON.parse(text.trim()));
+    } catch(e) {
+      alert('JSONの読み込みに失敗しました。\nエラー：' + e.message);
+    }
+  };
+  reader.onerror = () => alert('ファイルの読み取りに失敗しました。');
+  reader.readAsText(file, 'UTF-8');
+}
+function parseFromPaste() {
+  let text = document.getElementById('jsonPaste').value.trim();
+  if (!text) { alert('JSONを貼り付けてください'); return; }
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  try { loadData(JSON.parse(text)); }
+  catch(e) { alert('JSONの解析に失敗しました。\nエラー：' + e.message); }
+}
+
+// ========== データ描画 ==========
+function loadData(data) {
+  currentData = data;
+  document.getElementById('loadArea').style.display = 'none';
+  document.getElementById('resultArea').style.display = 'block';
+
+  // サマリー情報
+  const ngCount = data.ngCount || 0;
+  const badge = document.getElementById('summaryBadge');
+  badge.textContent = ngCount > 0 ? `⚠️ 異常 ${ngCount} 件` : '✅ 異常なし';
+  badge.className   = ngCount > 0 ? 'badge-ng' : 'badge-ok';
+
+  const grid = document.getElementById('infoGrid');
+  grid.innerHTML = `
+    <div class="info-cell"><label>点検日時</label><div class="val">${data.checkDate||'—'}</div></div>
+    <div class="info-cell"><label>車両番号</label><div class="val">${data.plateNo||'—'}</div></div>
+    <div class="info-cell"><label>運転者氏名</label><div class="val">${data.driverName||'—'}</div></div>
+    <div class="info-cell"><label>車種</label><div class="val">${data.vehicleType||'—'}</div></div>
+    <div class="info-cell"><label>走行距離</label><div class="val">${data.odometer ? data.odometer+'km' : '—'}</div></div>
+    <div class="info-cell"><label>前回距離</label><div class="val">${data.odometerPrev ? data.odometerPrev+'km' : '—'}</div></div>
+    <div class="info-cell span2"><label>運行区間</label><div class="val">${data.route||'—'}</div></div>
+    <div class="info-cell span2"><label>総合所見</label><div class="val">${data.overallNote||'—'}</div></div>
+    <div class="info-cell span2"><label>データ送信日時</label><div class="val">${data.submittedAt||'—'}</div></div>
+  `;
+
+  // 異常サマリー
+  if (ngCount > 0 && data.ngItems) {
+    document.getElementById('ngSummary').style.display = 'block';
+    const ul = document.getElementById('ngList');
+    ul.innerHTML = data.ngItems.map(item =>
+      `<li>⚠️ ${item}${data.items ? Object.values(data.items).find(i=>i.label===item && i.note) ? '　→ '+Object.values(data.items).find(i=>i.label===item).note : '' : ''}</li>`
+    ).join('');
+  }
+
+  // 点検テーブル
+  const tablesDiv = document.getElementById('checkTables');
+  tablesDiv.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const wrap = document.createElement('div');
+    wrap.className = 'check-table-wrap';
+    wrap.innerHTML = `
+      <div class="check-table-header">${cat.icon} ${cat.title}</div>
+      <table>
+        <thead><tr>
+          <th style="width:36%">点検項目</th>
+          <th style="width:10%">結果</th>
+          <th>備考・特記事項</th>
+        </tr></thead>
+        <tbody>
+          ${cat.items.map(item => {
+            const d = data.items && data.items[item.id];
+            const r = d ? d.result : null;
+            const note = d ? d.note : '';
+            const rowClass = r === 'ng' ? ' class="row-ng"' : '';
+            const badge = r === 'ok' ? '<span class="result-badge ok">✅ 異常なし</span>'
+                        : r === 'ng' ? '<span class="result-badge ng">❌ 異常あり</span>'
+                        : r === 'na' ? '<span class="result-badge na">— 該当なし</span>'
+                        : '<span class="result-badge none">未確認</span>';
+            return `<tr${rowClass}>
+              <td>${item.label}</td>
+              <td>${badge}</td>
+              <td style="color:#555">${note||''}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+    tablesDiv.appendChild(wrap);
+  });
+
+  // 管理者日時の初期設定
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('managerDate').value = now.toISOString().slice(0,16);
+
+  // 印刷用データ反映
+  buildPrint(data);
+}
+
+// ========== 運行可否判断 ==========
+function setJudge(v) {
+  judgeResult = v;
+  document.getElementById('judgeOK').className = 'judge-btn runok'  + (v==='ok' ? ' active' : '');
+  document.getElementById('judgeNG').className = 'judge-btn runnok' + (v==='ng' ? ' active' : '');
+  updatePrintJudge();
+}
+
+// ========== 印刷用ビルド ==========
+function buildPrint(data) {
+  document.getElementById('pDate').textContent    = data.checkDate||'';
+  document.getElementById('pPlate').textContent   = data.plateNo||'';
+  document.getElementById('pDriver').textContent  = data.driverName||'';
+  document.getElementById('pVehicle').textContent = data.vehicleType||'';
+  document.getElementById('pOdometer').textContent= data.odometer ? data.odometer+' km' : '';
+  document.getElementById('pRoute').textContent   = data.route||'';
+  document.getElementById('pOverall').textContent = data.overallNote||'';
+
+  // 点検時間
+  const inspEl = document.getElementById('pInspTime');
+  if (data.inspectionTime) {
+    const warn = data.inspectionSec && data.inspectionSec < 300;
+    inspEl.innerHTML = `<b style="color:${warn ? '#c1121f' : '#2d6a4f'}">${data.inspectionTime}</b>${warn ? '　⚠️ 短すぎる可能性があります' : '　✅ 適切'}`;
+  } else {
+    inspEl.textContent = '（未計測）';
+  }
+  document.getElementById('pPlateTime').textContent = data.photoPlateTime
+    ? new Date(data.photoPlateTime).toLocaleString('ja-JP') : '—';
+  document.getElementById('pPrintDate').textContent = '出力：'+new Date().toLocaleString('ja-JP');
+  document.getElementById('pFooterDate').textContent= '記録保存期限：1年間';
+
+  // 車両証跡写真エリア（ナンバー・メーター）
+  const photoWrap = document.getElementById('pVehiclePhotos');
+  if (data.photoPlate || data.photoMeter) {
+    photoWrap.style.display = 'flex';
+    const mkBox = (img, lbl) => {
+      const box = document.createElement('div');
+      box.className = 'print-vehicle-photo-box';
+      if (img) {
+        box.innerHTML = `<label>${lbl}</label><img src="${img}" alt="${lbl}">`;
+      } else {
+        box.innerHTML = `<label>${lbl}</label><div class="no-photo">（写真なし）</div>`;
+      }
+      return box;
+    };
+    photoWrap.innerHTML = '';
+    photoWrap.appendChild(mkBox(data.photoPlate, '📷 車両番号プレート'));
+    photoWrap.appendChild(mkBox(data.photoMeter, '📷 メーター（走行距離）'));
+  } else {
+    photoWrap.style.display = 'none';
+  }
+
+  // 点検テーブル（カテゴリごとにpage-break-inside:avoidブロックで包む）
+  const el = document.getElementById('pCheckTables');
+  el.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const block = document.createElement('div');
+    block.className = 'print-section-block';
+
+    const title = document.createElement('div');
+    title.className = 'print-section-title';
+    title.textContent = cat.title;
+    block.appendChild(title);
+
+    // 異常写真があれば列を追加
+    const hasNgPhoto = cat.items.some(item => {
+      const d = data.items && data.items[item.id];
+      return d && d.result === 'ng' && d.photo;
+    });
+
+    const table = document.createElement('table');
+    table.className = 'print-check-table';
+    const colWidths = hasNgPhoto
+      ? `<th style="width:38%">点検項目</th><th style="width:13%">結果</th><th>備考・特記事項</th><th style="width:22%">異常写真</th>`
+      : `<th style="width:52%">点検項目</th><th style="width:16%">結果</th><th>備考・特記事項</th>`;
+    table.innerHTML = `
+      <thead><tr>${colWidths}</tr></thead>
+      <tbody>
+        ${cat.items.map(item => {
+          const d = data.items && data.items[item.id];
+          const r = d ? d.result : null;
+          const note = d ? d.note : '';
+          const photo = d ? d.photo : null;
+          const rowClass = r === 'ng' ? ' class="row-ng"' : '';
+          const res = r === 'ok' ? '<span class="pr-ok">✅ 異常なし</span>'
+                    : r === 'ng' ? '<span class="pr-ng">❌ 異常あり</span>'
+                    : r === 'na' ? '<span class="pr-na">― 該当なし</span>'
+                    : '<span class="pr-non">― 未確認</span>';
+          const photoCell = hasNgPhoto
+            ? `<td>${photo ? `<img class="print-ng-photo" src="${photo}" alt="異常写真">` : ''}</td>`
+            : '';
+          return `<tr${rowClass}><td>${item.label}</td><td>${res}</td><td>${note||''}</td>${photoCell}</tr>`;
+        }).join('')}
+      </tbody>
+    `;
+    block.appendChild(table);
+    el.appendChild(block);
+  });
+  updatePrintJudge();
+}
+
+function updatePrintJudge() {
+  const mgrName    = document.getElementById('managerName')?.value || '';
+  const mgrDate    = document.getElementById('managerDate')?.value || '';
+  const mgrComment = document.getElementById('managerComment')?.value || '';
+
+  document.getElementById('pMgrDate').textContent        = mgrDate;
+  document.getElementById('pMgrName').textContent        = mgrName;
+  document.getElementById('pMgrComment').textContent     = mgrComment;
+
+  const resEl = document.getElementById('pJudgeResult');
+  if (judgeResult === 'ok') { resEl.textContent = '✅ 運行可'; resEl.className = 'print-judge-result ok'; }
+  else if (judgeResult === 'ng') { resEl.textContent = '🚫 運行不可'; resEl.className = 'print-judge-result ng'; }
+  else { resEl.textContent = '（判定待ち）'; resEl.className = 'print-judge-result'; }
+}
+
+// 管理者入力をリアルタイムで印刷側に反映
+['managerName','managerDate','managerComment'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updatePrintJudge);
+});
+
+function resetAll() {
+  if (!confirm('リセットしますか？')) return;
+  currentData = null; judgeResult = null;
+  document.getElementById('loadArea').style.display = 'block';
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('jsonPaste').value = '';
+}
+</script>
+</body>
+</html>

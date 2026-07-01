@@ -884,6 +884,11 @@ function openSendModal() {
     alert('車両番号の写真またはテキスト入力が必要です');
     return;
   }
+  if (!vehiclePhotos.meter) {
+    alert('⚠️ メーター撮影が完了していません。\n走行距離メーターを撮影してから送信してください。');
+    document.getElementById('btnMeterPhoto').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
   currentJson = buildJson();
   const ng = currentJson.ngCount > 0
     ? `⚠️ 異常 ${currentJson.ngCount} 件：${currentJson.ngItems.join('、')}`

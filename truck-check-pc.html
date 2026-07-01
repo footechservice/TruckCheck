@@ -485,7 +485,6 @@
     </div>
     <div class="header-right">
       <button class="btn btn-outline" onclick="resetAll()">🔄 リセット</button>
-      <button class="btn btn-primary" onclick="window.print()">🖨️ 印刷・PDF</button>
     </div>
   </header>
 
@@ -553,6 +552,13 @@
             <textarea id="managerComment" placeholder="異常への対応指示、確認事項など"></textarea>
           </div>
         </div>
+      </div>
+      <!-- 印刷ボタン（一番下） -->
+      <div style="text-align:center;margin:20px 0 8px">
+        <button class="btn btn-primary" onclick="window.print()"
+          style="padding:14px 40px;font-size:16px;border-radius:10px;letter-spacing:0.05em">
+          🖨️ 印刷・PDF出力
+        </button>
       </div>
     </div>
   </main>
@@ -891,6 +897,13 @@ function updatePrintJudge() {
   const mgrName    = document.getElementById('managerName')?.value || '';
   const mgrDate    = document.getElementById('managerDate')?.value || '';
   const mgrComment = document.getElementById('managerComment')?.value || '';
+
+  // 印刷時のファイル名をタイトルで制御（ナンバー_日付）
+  if (currentData) {
+    const plate = (currentData.plateNo || '').replace(/\s/g, '');
+    const date  = (currentData.checkDate || '').replace(/[-T:]/g, '').slice(0, 12);
+    document.title = plate && date ? `${plate}_${date}` : '始業前日常点検記録票';
+  }
 
   document.getElementById('pMgrDate').textContent        = mgrDate;
   document.getElementById('pMgrName').textContent        = mgrName;

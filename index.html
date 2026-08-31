@@ -714,19 +714,38 @@ function resizeImage(file, maxSize, quality, cb) {
   reader.readAsDataURL(file);
 }
 
+// 画像をカメラロールに保存
+function saveToCamera(b64, filename) {
+  try {
+    const a = document.createElement('a');
+    a.href = b64;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch(e) { console.log('カメラロール保存失敗:', e); }
+}
+
 function takeNgPhoto(id) {
   const inp = document.createElement('input');
   inp.type='file'; inp.accept='image/*'; inp.capture='environment';
   inp.onchange = e => {
     const file = e.target.files[0]; if (!file) return;
     resizeImage(file, 800, 0.6, b64 => {
-      checkData[id].photo = b64;
       const thumb  = document.getElementById('ngthumb_' + id);
       const remove = document.getElementById('ngremove_' + id);
       const btn    = document.querySelector(`#ngphoto_${id} .btn-ng-photo`);
+      checkData[id].photo = b64;
       thumb.src = b64; thumb.classList.add('show');
       remove.classList.add('show');
       if (btn) { btn.textContent='📷 撮り直す'; btn.classList.add('taken'); }
+      // 異常写真をカメラロールに保存
+      const nowNg = new Date();
+      const plateNg = (document.getElementById('plateNo').value || 'unknown').replace(/\s/g,'');
+      const dateNg = nowNg.toISOString().slice(0,16).replace(/[-T:]/g,'');
+      const item = CHECKS.find(c => c.id === id);
+      const label = item ? item.label.slice(0,10) : id;
+      saveToCamera(b64, `${plateNg}_${dateNg}_異常_${label}.jpg`);
     });
   };
   inp.click();
@@ -759,7 +778,14 @@ function takePhoto(type) {
       remove.classList.add('show');
       btn.textContent='📷 撮り直す'; btn.classList.add('taken');
       if (isPlate) startTimer();
-      if (!isPlate && timerStart) stopTimer();
+      if (!isPlate && timerStart) {
+        stopTimer();
+        // メーター写真をカメラロールに保存
+        const now = new Date();
+        const plate = (document.getElementById('plateNo').value || 'unknown').replace(/\s/g,'');
+        const dateStr = now.toISOString().slice(0,16).replace(/[-T:]/g,'');
+        saveToCamera(b64, `${plate}_${dateStr}_メーター.jpg`);
+      }
     });
   };
   inp.click();

@@ -982,7 +982,7 @@ function showResult(approved, now) {
     + (timeMsg ? `<br><br><span style="color:${timeWarn?'#c1121f':'#2d6a4f'};font-weight:700;font-size:13px">${timeMsg.replace(/\n/g,'<br>')}</span>` : '');
 
   document.getElementById('resultTime').textContent = approved
-    ? `自動承認日時：${now.toLocaleString('ja-JP')}` : '';
+    ? `自動判定日時：${now.toLocaleString('ja-JP')}` : '';
   modal.classList.add('show');
 }
 

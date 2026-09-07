@@ -418,7 +418,7 @@ const CHECKS = [
   { id:'c09', cat:'灯火類',              label:'灯火装置の点灯・点滅（全灯火）',        guide:'前照灯・制動灯・方向指示器・後退灯が正常か', na:false },
   { id:'c10', cat:'ウォッシャー・ワイパー', label:'ウォッシャー液量・噴射・ワイパー払拭', guide:'液量確認、噴射OK・ワイパー拭き取り正常か', na:false },
   { id:'c11', cat:'エアタンク',            label:'エアタンクの凝水',                  guide:'ドレーンコックを開いて水分を排出（エア車のみ）', na:true },
-  { id:'c12', cat:'運転者',              label:'アルコール検知器による確認',           guide:'検知器を使用し酒気帯びがないことを確認', na:false },
+  { id:'c12', cat:'運転者',              label:'アルコールチェック実施確認',           guide:'所定のアルコールチェックを実施済みであることを確認（このアプリでは測定しません）', na:false },
   { id:'c13', cat:'運転者',              label:'体調・疲労・服薬の確認',              guide:'発熱・頭痛・過度の疲労・眠気を催す薬がないか', na:false },
 ];
 
@@ -623,8 +623,8 @@ function buildCheckList() {
       <div class="item-label">${item.label}</div>
       <div class="item-guide">${item.guide}</div>
       <div class="btn-group">
-        <button class="btn-check" onclick="setCheck('${item.id}','ok',this)">✅ 異常なし</button>
-        <button class="btn-check" onclick="setCheck('${item.id}','ng',this)">❌ 異常あり</button>
+        <button class="btn-check" onclick="setCheck('${item.id}','ok',this)">${item.id==='c12' ? '✅ 実施済' : '✅ 異常なし'}</button>
+        <button class="btn-check" onclick="setCheck('${item.id}','ng',this)">${item.id==='c12' ? '❌ 未実施' : '❌ 異常あり'}</button>
         ${item.na ? `<button class="btn-check" onclick="setCheck('${item.id}','na',this)">－ 該当なし</button>` : ''}
       </div>
       <div class="ng-note" id="note_${item.id}">
@@ -894,6 +894,12 @@ async function submitCheck() {
     showPhoneModal();
     return;  // 電話モーダルを閉じた後にfinalSubmit()で送信
   }
+  // 最重要項目に未実施・異常があれば警告
+  const criticalNg = CHECKS.filter(c => c.priority === 3 && checkData[c.id].result === 'ng');
+  if (criticalNg.length > 0) {
+    showPhoneModal();
+    return;
+  }
   finalSubmit();
 }
 
@@ -963,6 +969,10 @@ function showResult(approved, now) {
   document.getElementById('resultIcon').textContent  = approved ? '✅' : '⚠️';
   document.getElementById('resultTitle').textContent = approved ? '運行許可' : '異常あり';
   document.getElementById('resultTitle').className   = 'modal-title ' + (approved ? 'ok' : 'ng');
+
+  // 最重要項目の異常チェック
+  const hasCriticalNg = CHECKS.some(c => c.priority === 3 && checkData[c.id].result === 'ng');
+  if (hasCriticalNg) approved = false;
 
   // 点検時間の計算
   let timeMsg = '';
